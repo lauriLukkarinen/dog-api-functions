@@ -1,6 +1,16 @@
 import * as cheerio from "cheerio";
+import * as iconv from "iconv-lite";
 import { AnnouncementSource, DogSalesAnnouncement } from "typings";
 import { AnnouncementAdapter } from "../types";
+
+/**
+ * Decodes response from Tori using correct encoding of iso-8859-1
+ */
+const decodeResponse = async (response: Response) => {
+  const arrayBuffer = await response.arrayBuffer();
+  const buffer = Buffer.from(arrayBuffer);
+  return iconv.decode(buffer, "iso-8859-1");
+}
 
 /**
  * Translates given announcement item element to sales announcement
@@ -9,15 +19,14 @@ import { AnnouncementAdapter } from "../types";
  */
 const translateToSalesAnnouncement = async (element: cheerio.Element): Promise<DogSalesAnnouncement | undefined> => {
   try {
-
     const id = element.attribs["id"];
     const announcementUrl = element.attribs["href"];
 
     if (!id || !announcementUrl) throw Error(`Invalid ID "${id}" or announcement URL "${announcementUrl}"`);
 
     const announcementPageResponse = await fetch(announcementUrl);
-
-    const $ = cheerio.load(await announcementPageResponse.text());
+    const decodedResponse = await decodeResponse(announcementPageResponse);
+    const $ = cheerio.load(decodedResponse);
 
     const tealiumJson = $("script")
       .filter((_, element) => $(element).text().includes("var tealium_json = "))
@@ -34,12 +43,13 @@ const translateToSalesAnnouncement = async (element: cheerio.Element): Promise<D
     const sellerInfo = body.find("#seller_info");
     const createdBy = sellerInfo
       .find("b[class=name]")
-      .text();
+      .text()
+      .trim();
 
     const location = sellerInfo
       .find("div[class='nohistory private']")
       .contents()
-      .filter((_, element) => { console.log(element); return element.type === "text"; })
+      .filter((_, element) => element.type === "text")
       .text()
       .trim();
 
@@ -54,18 +64,23 @@ const translateToSalesAnnouncement = async (element: cheerio.Element): Promise<D
 
     const title = content
       .find("h1")
-      .text();
+      .text()
+      .trim();
 
     const details = content.find(".details");
 
     const description = details
       .find(".body")
-      .text();
+      .text()
+      .trim();
+
+    console.log(description);
 
     const price = content
       .find(".price meta")
       .filter((_, element) => element.attribs["itemprop"] === "price")
-      .attr("content") || "";
+      .attr("content")
+      ?.trim() || "";
 
     const announcement: DogSalesAnnouncement = {
       source: AnnouncementSource.TORI,
