@@ -1,0 +1,15 @@
+{
+  "name": "dog-announcements-api",
+  "version": "0.0.0",
+  "dependencies": {
+    "typings": "*"
+  },
+  "devDependencies": {
+    "wrangler": "2.1.13"
+  },
+  "private": true,
+  "scripts": {
+    "start": "wrangler dev",
+    "publish": "wrangler publish"
+  }
+}
