@@ -1,0 +1,10 @@
+name = "dog-scraper"
+main = "src/index.ts"
+compatibility_date = "2022-10-16"
+
+kv_namespaces = [
+  { binding = "DOG_API", id = "8d0eb5bd7ded4d6fa5ed679e89361725", preview_id = "db5d70bf845149e8acb1355f2330415b" },
+]
+
+[triggers]
+crons = ["*/15 * * * *"]
